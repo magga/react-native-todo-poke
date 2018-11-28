@@ -1,11 +1,14 @@
 import React, { Component } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, FlatList, Image } from 'react-native';
-import { ListItem, Body, Right, Thumbnail } from 'native-base';
+import { View, Text, TouchableOpacity, ActivityIndicator, FlatList, Image, Alert } from 'react-native';
+import { ListItem, Body, Right } from 'native-base';
 import IconI from 'react-native-vector-icons/Ionicons';
 import firebase from 'firebase';
 import _ from 'lodash';
+import { connect } from 'react-redux';
 
 import { colors } from '../../constants/general/Color';
+import { FirebaseDeleteData } from '../../constants/FirebaseHelper';
+import * as actions from './../../actions';
 
 class TodoFirebaseScreen extends Component {
     static navigationOptions = ({ navigation }) => {
@@ -18,7 +21,7 @@ class TodoFirebaseScreen extends Component {
                 color: colors.white
             },
             headerRight: (
-                <TouchableOpacity onPress={() => navigation.navigate('add_todo')}>
+                <TouchableOpacity onPress={() => navigation.navigate('add_todo', { type: 'firebase' })}>
                     <IconI name='md-add' size={25} color='white' style={{ marginRight: 20 }} />
                 </TouchableOpacity>
             ),
@@ -47,10 +50,37 @@ class TodoFirebaseScreen extends Component {
         this.ref = firebase.database().ref(`todo/${firebase.auth().currentUser.uid}`);
         
         this.ref.on('value', (snapshot) => {
+            this.setState({ isLoading: false });
+
             if (snapshot.val()) {
-                this.setState({ data: _.toArray(snapshot.val()), isLoading: false });
+                const arr = _.toArray(snapshot.val());
+
+                this.setState({ data: arr });
+
+                for (const data of arr) {
+                    if (data.id === this.props.current.id) {
+                        this.props.ViewTodo(data);
+                    }
+                }
             }
         });
+    }
+
+    _hapusTodo(data) {
+        const { id, nama } = data;
+
+        Alert.alert('WARNING', `Apakah anda yakin akan menghapus "${nama}"?`, [{ text: 'tidak' }, {
+            text: 'ya',
+            onPress: () => {
+                FirebaseDeleteData(`todo/${firebase.auth().currentUser.uid}/${id}`)
+                .then(() => {
+                    Alert.alert('BERHASIL', `"${nama}" berhasil dihapus`, [{ text: 'oke' }]);
+                })
+                .catch((err) => {
+                    Alert.alert('ERROR', `Gagal menghapus data, silahkan coba lagi. \n\nError : ${err.message}`, [{ text: 'oke' }]);
+                });
+            }
+        }]);
     }
 
     _renderList() {
@@ -76,13 +106,25 @@ class TodoFirebaseScreen extends Component {
                                 <Text style={{ marginTop: 10, fontSize: 12 }}>{lokasi}</Text>
                             </Body>
                             <Right>
-                                <TouchableOpacity 
-                                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
-                                    // onPress={() => this.props.navigation.navigate('detail_kta', { kta: item })}
-                                >
-                                    <Text style={{ color: colors.softDarkBrown, marginRight: 10 }}>detail</Text>
-                                    <IconI name='ios-arrow-forward' size={20} color={colors.softDarkBrown} />
-                                </TouchableOpacity>
+                                <View style={{ flexDirection: 'column' }}>
+                                    <TouchableOpacity 
+                                        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+                                        onPress={() => {
+                                            this.props.ViewTodo(item);
+                                            this.props.navigation.navigate('view_todo');
+                                        }}
+                                    >
+                                        <Text style={{ color: colors.softDarkBrown, marginRight: 10 }}>detail</Text>
+                                        <IconI name='ios-arrow-forward' size={20} color={colors.softDarkBrown} />
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity 
+                                        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 5 }}
+                                        onPress={() => this._hapusTodo(item)}
+                                    >
+                                        <IconI name='ios-trash' size={25} color={colors.softDarkBrown} />
+                                    </TouchableOpacity>
+                                </View>
                             </Right>
                         </ListItem>
                     );
@@ -113,4 +155,10 @@ class TodoFirebaseScreen extends Component {
     }
 }
 
-export default TodoFirebaseScreen;
+const mapStateToProps = (state) => {
+    return {
+        current: state.todos.currentTodo
+    };
+};
+
+export default connect(mapStateToProps, actions)(TodoFirebaseScreen);

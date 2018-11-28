@@ -47,3 +47,15 @@ export const FirebaseSetData = (path, value) => {
         });
     });
 };
+
+export const FirebaseDeleteData = (path) => {
+    return new Promise((resolve, reject) => {
+        firebase.database().ref(path).remove()
+        .then(() => {
+            resolve();
+        })
+        .catch((err) => {
+            reject(err);
+        });
+    });
+};

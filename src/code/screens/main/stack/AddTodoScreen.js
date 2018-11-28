@@ -4,9 +4,11 @@ import { Grid, Row, Input, Button, Toast } from 'native-base';
 import RNGooglePlaces from 'react-native-google-places';
 import shortid from 'shortid';
 import firebase from 'firebase';
+import { connect } from 'react-redux';
 
 import { colors } from '../../../constants/general/Color';
 import { FirebaseSetData } from '../../../constants/FirebaseHelper';
+import * as actions from './../../../actions';
 
 class AddTodoScreen extends Component {
     static navigationOptions = () => {
@@ -123,8 +125,54 @@ class AddTodoScreen extends Component {
         );
     }
 
-    _simpan() {
+    _simpanFirebase() {
         const { nama, lokasi, lokasiLat, lokasiLon, icon } = this.state;
+        const id = shortid.generate();
+
+        this.setState({ isLoading: true });
+
+        FirebaseSetData(`todo/${firebase.auth().currentUser.uid}/${id}`, {
+            id,
+            nama,
+            lokasi,
+            lokasiLat,
+            lokasiLon,
+            icon,
+            createdDate: (new Date()).toISOString()
+        })
+        .then(() => {
+            Alert.alert('BERHASIL', 'Todo berhasil dibuat', [{ text: 'ok' }]);
+            this.setState({ isLoading: false });
+            this.props.navigation.goBack();
+        })
+        .catch((err) => {
+            Alert.alert('ERROR', `Can't insert data. \n\nError: ${err.message}`, [{ text: 'ok' }]);
+            this.setState({ isLoading: false });
+        });
+    }
+
+    _simpanLocal() {
+        const { nama, lokasi, lokasiLat, lokasiLon, icon } = this.state;
+        const id = shortid.generate();
+
+        const todo = {
+            id,
+            nama,
+            lokasi,
+            lokasiLat,
+            lokasiLon,
+            icon,
+            createdDate: (new Date()).toISOString()
+        };
+
+        this.props.AddTodo(todo);
+        
+        Alert.alert('BERHASIL', 'Todo berhasil dibuat', [{ text: 'ok' }]);
+        this.props.navigation.goBack();
+    }
+
+    _simpan() {
+        const { nama } = this.state;
 
         if (!nama) {
             return Toast.show({ text: 'Harap masukkan nama terlebih dahulu', buttonText: 'oke', duration: 2500, type: 'danger' });
@@ -133,36 +181,21 @@ class AddTodoScreen extends Component {
         Alert.alert('WARNING', 'Apakah anda yakin data anda sudah benar?', [{ text: 'batal' }, {
             text: 'ya',
             onPress: () => {
-                this.setState({ isLoading: true });
+                const { type } = this.props.navigation.state.params;
 
-                const id = shortid.generate();
-
-                FirebaseSetData(`todo/${firebase.auth().currentUser.uid}/${id}`, {
-                    id,
-                    nama,
-                    lokasi,
-                    lokasiLat,
-                    lokasiLon,
-                    icon,
-                    createdDate: (new Date()).toISOString()
-                })
-                .then(() => {
-                    Alert.alert('BERHASIL', 'Todo berhasil dibuat', [{ text: 'ok' }]);
-                    this.setState({ isLoading: false });
-                    this.props.navigation.goBack();
-                })
-                .catch((err) => {
-                    Alert.alert('ERROR', `Can't insert data. \n\nError: ${err.message}`, [{ text: 'ok' }]);
-                    this.setState({ isLoading: false });
-                });
+                if (type === 'firebase') {
+                    this._simpanFirebase();
+                } else {
+                    this._simpanLocal();
+                }
             }
         }]);
     }
 
     render() {
         return (
-            <View style={{ flex: 1, backgroundColor: colors.softYellow }}>
-                <ScrollView style={{ padding: 20 }}>
+            <View style={{ flex: 1, backgroundColor: colors.softYellow, paddingBottom: 20 }}>
+                <ScrollView style={{ paddingHorizontal: 20, marginTop: 20 }}>
                     {this._renderForm()}
                     {this._renderButtonSimpan()}
                 </ScrollView>
@@ -187,4 +220,11 @@ const styles = {
     }
 };
 
-export default AddTodoScreen;
+const mapStateToProps = (state) => {
+    return {
+        all: state.todos.allTodo,
+        current: state.todos.currentTodo
+    };
+};
+
+export default connect(mapStateToProps, actions)(AddTodoScreen);

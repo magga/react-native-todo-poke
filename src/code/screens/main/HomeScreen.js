@@ -2,9 +2,11 @@ import React, { Component } from 'react';
 import { View, Text, Image, ActivityIndicator, Alert } from 'react-native';
 import IconI from 'react-native-vector-icons/Ionicons';
 import { Button } from 'native-base';
+import { connect } from 'react-redux';
 
 import { colors } from '../../constants/general/Color';
 import { FirebaseLogout } from '../../constants/FirebaseHelper';
+import * as actions from './../../actions'; 
 
 class HomeScreen extends Component {
     static navigationOptions = {
@@ -16,8 +18,24 @@ class HomeScreen extends Component {
         super(props);
 
         this.state = {
-            isLoading: false
+            isLoading: false,
+            isFetchingWeather: true
         };
+    }
+
+    componentDidMount() {
+        navigator.geolocation.getCurrentPosition((location) => {
+            const { latitude, longitude } = location.coords;
+
+            this.props.FetchWeather(latitude, longitude)
+            .then(() => {
+                this.setState({ isFetchingWeather: false });
+            })
+            .catch((err) => {
+                Alert.alert('ERROR', `Gagal mengambil data cuaca. \n\nError : ${err.message}`, [{ text: 'oke' }]);
+                this.setState({ isFetchingWeather: false });
+            });
+        });
     }
 
     _logout() {
@@ -28,6 +46,7 @@ class HomeScreen extends Component {
 
                 FirebaseLogout()
                 .then(() => {
+                    this.props.ClearTodo();
                     Alert.alert('BERHASIL', 'Berhasil logout', [{ text: 'ok' }]);
                     this.setState({ isLoading: false });
                 })
@@ -57,10 +76,35 @@ class HomeScreen extends Component {
         );
     }
 
+    _renderCuaca() {
+        if (this.state.isFetchingWeather) {
+            return (
+                <ActivityIndicator size='large' color={colors.softYellow} />
+            );
+        }
+
+        const { name, main } = this.props.weather;
+
+        if (!name) {
+            return;
+        }
+
+        const { temp } = main;
+
+        return (
+            <View style={{ alignItems: 'center', borderWidth: 1, borderColor: colors.white, padding: 20 }}>
+                <Text style={{ color: colors.white, fontSize: 18, textAlign: 'center', marginBottom: 5 }}>{`Lokasi Anda : ${name}`}</Text>
+                <Text style={{ color: colors.white, fontSize: 18, textAlign: 'center' }}>{`Cuaca saat ini : ${temp}° C`}</Text>
+            </View>
+        );
+    }
+
     render() {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.lightBlue, padding: 50 }}>
-                <Image resizeMethod='resize' source={require('./../../../assets/images/snorlax.png')} style={{ height: 167, aspectRatio: 1, marginBottom: 50 }} />
+            <View style={{ flex: 1, justifyContent: 'space-evenly', alignItems: 'center', backgroundColor: colors.lightBlue, padding: 50 }}>
+                {this._renderCuaca()}
+
+                <Image resizeMethod='resize' source={require('./../../../assets/images/snorlax.png')} style={{ height: 167, aspectRatio: 1 }} />
 
                 {this._renderButtonLogout()}
             </View>
@@ -68,4 +112,10 @@ class HomeScreen extends Component {
     }
 }
 
-export default HomeScreen;
+const mapStateToProps = (state) => {
+    return {
+        weather: state.weather.todaysWeather
+    };
+};
+
+export default connect(mapStateToProps, actions)(HomeScreen);
