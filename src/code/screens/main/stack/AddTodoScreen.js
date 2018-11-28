@@ -98,7 +98,7 @@ class AddTodoScreen extends Component {
 
     _renderForm() {
         return (
-            <View>
+            <View style={{ marginTop: 20 }}>
                 {this._renderRowDetail('Nama', 'nama')}
                 {this._renderRowDetail('Lokasi', 'lokasi', true)}
                 {this._renderButtonPilihLokasi()}
@@ -117,7 +117,7 @@ class AddTodoScreen extends Component {
         return (
             <Button 
                 rounded 
-                style={{ flex: 1, justifyContent: 'center', backgroundColor: colors.lightBlue, margin: 15 }}
+                style={{ flex: 1, justifyContent: 'center', backgroundColor: colors.lightBlue, margin: 15, marginBottom: 20 }}
                 onPress={this._simpan.bind(this)}
             >
                 <Text style={{ color: colors.white, width: '100%', textAlign: 'center' }}>SIMPAN</Text>
@@ -194,8 +194,8 @@ class AddTodoScreen extends Component {
 
     render() {
         return (
-            <View style={{ flex: 1, backgroundColor: colors.softYellow, paddingBottom: 20 }}>
-                <ScrollView style={{ paddingHorizontal: 20, marginTop: 20 }}>
+            <View style={{ flex: 1, backgroundColor: colors.softYellow }}>
+                <ScrollView style={{ paddingHorizontal: 20 }}>
                     {this._renderForm()}
                     {this._renderButtonSimpan()}
                 </ScrollView>

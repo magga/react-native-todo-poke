@@ -117,7 +117,7 @@ class ViewTodoScreen extends Component {
         const { nama, lokasi, icon } = this.props.current;
 
         return (
-            <View>
+            <View style={{ marginVertical: 20 }}>
                 {this._renderIcon(icon)}
                 {this._renderRowDetail('Nama', nama)}
                 {this._renderRowDetail('Lokasi', lokasi)}
@@ -128,8 +128,8 @@ class ViewTodoScreen extends Component {
 
     render() {
         return (
-            <View style={{ flex: 1, backgroundColor: colors.softYellow, paddingBottom: 20 }}>
-                <ScrollView style={{ paddingHorizontal: 20, marginTop: 20 }}>
+            <View style={{ flex: 1, backgroundColor: colors.softYellow }}>
+                <ScrollView style={{ paddingHorizontal: 20 }}>
                     {this._renderForm()}
                 </ScrollView>
             </View>

@@ -37,10 +37,11 @@ const TodoLocalStackNavigator = createStackNavigator({
     view_todo: ViewTodoScreen
 });
 
-TodoLocalStackNavigator.navigationOptions = () => {
+TodoLocalStackNavigator.navigationOptions = ({ navigation }) => {
     return {
         title: 'Todo Local',
-        tabBarIcon: ({ tintColor }) => <IconI name='ios-phone-portrait' color={tintColor} size={25} />
+        tabBarIcon: ({ tintColor }) => <IconI name='ios-phone-portrait' color={tintColor} size={25} />,
+        tabBarVisible: navigation.state.index === 0,
     };
 };
 
